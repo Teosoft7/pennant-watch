@@ -1,2 +1,5 @@
 site/
 __pycache__/
+
+.claude
+.env.example
