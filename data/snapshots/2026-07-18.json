@@ -1,0 +1,221 @@
+{
+  "season": 2026,
+  "generated_at": "2026-07-18T13:47:33.392226+09:00",
+  "date": "2026-07-18",
+  "iso_week": "2026-W29",
+  "avg_games_played": 86.6,
+  "season_progress": 0.601,
+  "reliability_warning": false,
+  "teams": [
+    {
+      "rank": 1,
+      "team": "삼성",
+      "games": 86,
+      "wins": 52,
+      "losses": 32,
+      "draws": 2,
+      "win_pct": 0.619,
+      "prob_win": 0.2926,
+      "prob_win_normalized": 0.4272,
+      "prob_playoff": 0.9782,
+      "stats": {
+        "OPS": 0.779,
+        "RISP": 0.287,
+        "ERA": 4.08,
+        "WHIP": 1.38,
+        "FPCT": 0.984,
+        "SB%": 78.6,
+        "CS%": 28.4
+      }
+    },
+    {
+      "rank": 2,
+      "team": "LG",
+      "games": 87,
+      "wins": 52,
+      "losses": 35,
+      "draws": 0,
+      "win_pct": 0.598,
+      "prob_win": 0.0486,
+      "prob_win_normalized": 0.071,
+      "prob_playoff": 0.6803,
+      "stats": {
+        "OPS": 0.759,
+        "RISP": 0.278,
+        "ERA": 4.5,
+        "WHIP": 1.44,
+        "FPCT": 0.981,
+        "SB%": 74.1,
+        "CS%": 23.0
+      }
+    },
+    {
+      "rank": 3,
+      "team": "KT",
+      "games": 85,
+      "wins": 49,
+      "losses": 35,
+      "draws": 1,
+      "win_pct": 0.583,
+      "prob_win": 0.1484,
+      "prob_win_normalized": 0.2167,
+      "prob_playoff": 0.439,
+      "stats": {
+        "OPS": 0.761,
+        "RISP": 0.293,
+        "ERA": 4.66,
+        "WHIP": 1.46,
+        "FPCT": 0.982,
+        "SB%": 58.1,
+        "CS%": 23.1
+      }
+    },
+    {
+      "rank": 4,
+      "team": "KIA",
+      "games": 88,
+      "wins": 46,
+      "losses": 40,
+      "draws": 2,
+      "win_pct": 0.535,
+      "prob_win": 0.0682,
+      "prob_win_normalized": 0.0996,
+      "prob_playoff": 0.9328,
+      "stats": {
+        "OPS": 0.767,
+        "RISP": 0.276,
+        "ERA": 4.25,
+        "WHIP": 1.41,
+        "FPCT": 0.981,
+        "SB%": 83.6,
+        "CS%": 16.7
+      }
+    },
+    {
+      "rank": 5,
+      "team": "두산",
+      "games": 89,
+      "wins": 45,
+      "losses": 42,
+      "draws": 2,
+      "win_pct": 0.517,
+      "prob_win": 0.0204,
+      "prob_win_normalized": 0.0298,
+      "prob_playoff": 0.9237,
+      "stats": {
+        "OPS": 0.736,
+        "RISP": 0.258,
+        "ERA": 3.88,
+        "WHIP": 1.38,
+        "FPCT": 0.98,
+        "SB%": 80.0,
+        "CS%": 17.1
+      }
+    },
+    {
+      "rank": 6,
+      "team": "한화",
+      "games": 84,
+      "wins": 40,
+      "losses": 42,
+      "draws": 2,
+      "win_pct": 0.488,
+      "prob_win": 0.0359,
+      "prob_win_normalized": 0.0524,
+      "prob_playoff": 0.5326,
+      "stats": {
+        "OPS": 0.78,
+        "RISP": 0.278,
+        "ERA": 4.59,
+        "WHIP": 1.51,
+        "FPCT": 0.979,
+        "SB%": 73.5,
+        "CS%": 30.0
+      }
+    },
+    {
+      "rank": 7,
+      "team": "NC",
+      "games": 84,
+      "wins": 40,
+      "losses": 43,
+      "draws": 1,
+      "win_pct": 0.482,
+      "prob_win": 0.0679,
+      "prob_win_normalized": 0.0991,
+      "prob_playoff": 0.7421,
+      "stats": {
+        "OPS": 0.77,
+        "RISP": 0.274,
+        "ERA": 4.51,
+        "WHIP": 1.42,
+        "FPCT": 0.981,
+        "SB%": 73.3,
+        "CS%": 25.9
+      }
+    },
+    {
+      "rank": 8,
+      "team": "롯데",
+      "games": 86,
+      "wins": 38,
+      "losses": 46,
+      "draws": 2,
+      "win_pct": 0.452,
+      "prob_win": 0.0018,
+      "prob_win_normalized": 0.0027,
+      "prob_playoff": 0.2602,
+      "stats": {
+        "OPS": 0.701,
+        "RISP": 0.258,
+        "ERA": 4.41,
+        "WHIP": 1.45,
+        "FPCT": 0.981,
+        "SB%": 80.6,
+        "CS%": 30.0
+      }
+    },
+    {
+      "rank": 9,
+      "team": "SSG",
+      "games": 88,
+      "wins": 32,
+      "losses": 53,
+      "draws": 3,
+      "win_pct": 0.376,
+      "prob_win": 0.0009,
+      "prob_win_normalized": 0.0013,
+      "prob_playoff": 0.006,
+      "stats": {
+        "OPS": 0.75,
+        "RISP": 0.27,
+        "ERA": 5.78,
+        "WHIP": 1.62,
+        "FPCT": 0.98,
+        "SB%": 75.6,
+        "CS%": 25.8
+      }
+    },
+    {
+      "rank": 10,
+      "team": "키움",
+      "games": 89,
+      "wins": 31,
+      "losses": 57,
+      "draws": 1,
+      "win_pct": 0.352,
+      "prob_win": 0.0,
+      "prob_win_normalized": 0.0,
+      "prob_playoff": 0.006,
+      "stats": {
+        "OPS": 0.656,
+        "RISP": 0.221,
+        "ERA": 5.04,
+        "WHIP": 1.51,
+        "FPCT": 0.98,
+        "SB%": 88.2,
+        "CS%": 29.8
+      }
+    }
+  ]
+}

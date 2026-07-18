@@ -1,0 +1,62 @@
+# 매일 00:00 KST에 KBO 데이터 스크레이핑 → 예측 → 데이터 커밋 → GitHub Pages 배포.
+# 수동 실행: Actions 탭 → daily-update → Run workflow
+#
+# 최초 1회 설정: 리포지토리 Settings → Pages → Source 를 "GitHub Actions" 로 변경.
+name: daily-update
+
+on:
+  schedule:
+    - cron: "0 15 * * *"   # 15:00 UTC = 00:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 데이터 커밋
+  pages: write      # Pages 배포
+  id-token: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      - name: 일일 갱신 (스크레이핑 → 예측 → 스냅샷/승률 누적)
+        run: python -m scripts.run_daily_update
+        env:
+          DATA_SOURCE: web
+
+      - name: 데이터 커밋 (스냅샷·승률 히스토리 영속화)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "chore: daily data update $(date -u -d '+9 hours' +%F)"
+          git push
+
+      - name: 정적 사이트 빌드
+        run: python -m scripts.build_static_site site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KBO 시즌 중간 예측 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f9f9f7;
+  --surface:#fcfcfb;
+  --ink:#0b0b0b;
+  --ink-2:#52514e;
+  --muted:#898781;
+  --grid:#e1e0d9;
+  --border:rgba(11,11,11,.10);
+  --accent:#2a78d6;        /* 승률·우승확률 (sequential blue) */
+  --accent-deep:#1c5cab;
+  --po:#008300;            /* 포스트시즌 (2번째 sequential 컨텍스트: green) */
+  --track:#efeeea;
+  --hover:rgba(42,120,214,.06);
+  --c1:#2a78d6; --c2:#008300; --c3:#e87ba4; --c4:#eda100; --c5:#1baf7a;
+  --c6:#eb6834; --c7:#4a3aa7; --c8:#e34948;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme:dark;
+    --page:#0d0d0d;
+    --surface:#1a1a19;
+    --ink:#ffffff;
+    --ink-2:#c3c2b7;
+    --muted:#898781;
+    --grid:#2c2c2a;
+    --border:rgba(255,255,255,.10);
+    --accent:#3987e5;
+    --accent-deep:#6da7ec;
+    --po:#0ca30c;
+    --track:#2c2c2a;
+    --hover:rgba(57,135,229,.10);
+    --c1:#3987e5; --c2:#008300; --c3:#d55181; --c4:#c98500; --c5:#199e70;
+    --c6:#d95926; --c7:#9085e9; --c8:#e66767;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--page);color:var(--ink);min-height:100vh;
+  font-family:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+}
+
+/* ── 헤더 ─────────────────────────────────────── */
+header{max-width:1240px;margin:0 auto;padding:30px 24px 18px}
+header h1{font-size:clamp(20px,3vw,27px);font-weight:800;letter-spacing:-.01em}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{
+  font-size:12.5px;color:var(--ink-2);background:var(--surface);
+  border:1px solid var(--border);border-radius:999px;padding:5px 12px;
+}
+.chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.warn{
+  max-width:1240px;margin:0 auto;padding:0 24px;font-size:12.5px;color:#d03b3b;display:none;
+}
+
+/* ── 레이아웃 ─────────────────────────────────── */
+main{max-width:1240px;margin:0 auto;padding:8px 24px 56px;display:grid;gap:18px}
+.top{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(260px,1fr);gap:18px;align-items:start}
+@media(max-width:960px){.top{grid-template-columns:1fr}}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:20px 20px 14px;
+}
+.card h2{font-size:15.5px;font-weight:700;margin-bottom:2px}
+.card .sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+
+/* ── 순위 테이블 ──────────────────────────────── */
+table{width:100%;border-collapse:collapse}
+thead th{
+  font-size:11.5px;font-weight:600;color:var(--muted);text-align:right;
+  padding:8px 10px;border-bottom:1px solid var(--grid);white-space:nowrap;
+}
+thead th.l{text-align:left}
+thead th.win-h{color:var(--accent)}
+thead th.po-h{color:var(--po)}
+tbody td{
+  padding:10px;border-bottom:1px solid var(--grid);text-align:right;
+  font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--hover)}
+td.l{text-align:left}
+.rank{font-size:16px;font-weight:800;color:var(--ink);width:34px;text-align:center}
+tr.po-in .rank{color:var(--accent)}
+.team{font-weight:700;font-size:15px}
+.wpct{color:var(--accent);font-weight:700;font-size:15px}
+.dim{color:var(--ink-2)}
+.champ{font-weight:700;color:var(--accent-deep)}
+
+/* 포스트시즌 도넛 링 */
+.donut-cell{width:52px;padding-right:2px}
+.donut{
+  --p:0; width:44px;height:44px;border-radius:50%;position:relative;
+  background:conic-gradient(var(--po) calc(var(--p)*1turn), var(--track) 0);
+}
+.donut::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--surface)}
+.donut span{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums;
+}
+tr.po-out .donut{background:conic-gradient(var(--muted) calc(var(--p)*1turn), var(--track) 0)}
+
+/* 포스트시즌 컷 구분선 */
+tr.cut td{border-bottom:2px solid var(--po);padding-top:0;padding-bottom:0}
+tr.cut td div{
+  font-size:10.5px;font-weight:700;color:var(--po);letter-spacing:.12em;
+  text-align:center;padding:3px 0;
+}
+
+@media(max-width:720px){
+  .hide-sm{display:none}
+  thead th,tbody td{padding:8px 6px}
+}
+
+/* ── 우측 확률 패널 ───────────────────────────── */
+.bargroup{margin-bottom:18px}
+.bargroup h3{font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+.bargroup h3.po-h{color:var(--po)}
+.bargroup h3.win-h{color:var(--accent)}
+.brow{display:grid;grid-template-columns:44px 1fr 52px;gap:10px;align-items:center;padding:4px 0}
+.brow .bl{font-size:13px;font-weight:600;text-align:right;color:var(--ink)}
+.brow .bv{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.btrack{height:14px;background:var(--track);border-radius:4px;overflow:hidden}
+.bfill{height:100%;border-radius:0 4px 4px 0;min-width:2px}
+.bfill.po{background:var(--po)}
+.bfill.win{background:var(--accent)}
+
+/* ── 추이 차트 ───────────────────────────────── */
+canvas{max-height:320px}
+.chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.toggle{display:flex;background:var(--track);border-radius:8px;padding:3px;gap:2px}
+.toggle button{
+  border:0;background:none;color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:600;
+  padding:5px 14px;border-radius:6px;cursor:pointer;
+}
+.toggle button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+
+footer{
+  max-width:1240px;margin:0 auto;padding:0 24px 40px;
+  font-size:12px;color:var(--muted);line-height:1.9;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚾ KBO 시즌 중간 예측 및 분석 대시보드</h1>
+  <div class="meta">
+    <span class="chip">SEASON <b id="m-season">----</b></span>
+    <span class="chip">기준일 <b id="m-date">--</b></span>
+    <span class="chip">평균 <b id="m-games">--</b>경기 소화 (<b id="m-progress">--%</b>)</span>
+    <span class="chip">갱신 <b id="m-updated">--</b></span>
+  </div>
+</header>
+<p class="warn" id="warn">⚠ 시즌 초반(58경기 미만)은 비율 지표 안정화 전 — 확률 신뢰도가 낮습니다</p>
+
+<main>
+  <div class="top">
+    <section class="card">
+      <h2>팀 순위</h2>
+      <div class="sub">실제 승률 기준 · 도넛 = 포스트시즌 진출 확률 · 상위 5팀이 포스트시즌 진출</div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th class="l po-h">PS확률</th>
+            <th>순위</th>
+            <th class="l">팀</th>
+            <th class="win-h">승률</th>
+            <th>게임차</th>
+            <th>승</th>
+            <th>패</th>
+            <th>무</th>
+            <th class="hide-sm">OPS</th>
+            <th class="hide-sm">평균자책</th>
+            <th class="win-h">우승확률</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      </div>
+    </section>
+
+    <aside class="card">
+      <h2>시즌 예측 확률</h2>
+      <div class="sub">모델 예측 상위 5팀</div>
+      <div class="bargroup">
+        <h3 class="po-h">포스트시즌 진출 확률</h3>
+        <div id="bars-po"></div>
+      </div>
+      <div class="bargroup">
+        <h3 class="win-h">정규시즌 우승 확률 (리그 내 정규화)</h3>
+        <div id="bars-win"></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="card">
+    <div class="chart-head">
+      <div>
+        <h2 id="trend-title">시즌 승률 추이</h2>
+        <div class="sub" id="trend-sub">상위 5팀 · 시즌 개막부터 · 매일 00:00 KST 갱신</div>
+      </div>
+      <div class="toggle">
+        <button id="tab-wpct" class="on">승률</button>
+        <button id="tab-champ">우승확률</button>
+      </div>
+    </div>
+    <canvas id="trend"></canvas>
+  </section>
+</main>
+
+<footer>
+  모델: 로지스틱 회귀 · 피처: OPS / RISP / ERA / WHIP / FPCT / SB% / CS% (시즌 내 Z-score)<br>
+  순위는 실제 승률(무승부 제외) 기준 · '우승'은 정규시즌 1위(페넌트레이스)를 의미하며 한국시리즈 결과와 다를 수 있습니다 · 매일 00:00 KST 자동 갱신
+</footer>
+
+<script>
+const PO_SPOTS = 5;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const pct = (v,d=1) => (v*100).toFixed(d)+'%';
+
+function renderTable(latest){
+  document.getElementById('m-season').textContent = latest.season;
+  document.getElementById('m-date').textContent = latest.date || latest.iso_week;
+  document.getElementById('m-games').textContent = latest.avg_games_played.toFixed(0);
+  document.getElementById('m-progress').textContent = (latest.season_progress*100).toFixed(0)+'%';
+  document.getElementById('m-updated').textContent = latest.generated_at.slice(0,16).replace('T',' ');
+  if(latest.reliability_warning) document.getElementById('warn').style.display='block';
+
+  const leader = latest.teams[0];
+  const rows = latest.teams.map(t=>{
+    const gb = ((leader.wins - t.wins) + (t.losses - leader.losses)) / 2;
+    const inPo = t.rank <= PO_SPOTS;
+    return `
+      <tr class="${inPo?'po-in':'po-out'}" title="${t.team} · 우승 ${pct(t.prob_win_normalized)} · 포스트시즌 ${pct(t.prob_playoff)}">
+        <td class="l donut-cell">
+          <div class="donut" style="--p:${t.prob_playoff}"><span>${(t.prob_playoff*100).toFixed(0)}%</span></div>
+        </td>
+        <td class="rank">${t.rank}</td>
+        <td class="l team">${t.team}</td>
+        <td class="wpct">${t.win_pct.toFixed(3)}</td>
+        <td class="dim">${gb===0?'-':gb.toFixed(1)}</td>
+        <td>${t.wins}</td>
+        <td>${t.losses}</td>
+        <td class="dim">${t.draws}</td>
+        <td class="dim hide-sm">${t.stats.OPS.toFixed(3)}</td>
+        <td class="dim hide-sm">${t.stats.ERA.toFixed(2)}</td>
+        <td class="champ">${pct(t.prob_win_normalized)}</td>
+      </tr>
+      ${t.rank===PO_SPOTS?`<tr class="cut"><td colspan="11"><div>─ 포스트시즌 컷 ─</div></td></tr>`:''}`;
+  }).join('');
+  document.getElementById('tbody').innerHTML = rows;
+}
+
+function renderBars(latest){
+  const bar = (t,v,cls) => `
+    <div class="brow" title="${t} ${pct(v)}">
+      <div class="bl">${t}</div>
+      <div class="btrack"><div class="bfill ${cls}" style="width:${(v*100).toFixed(1)}%"></div></div>
+      <div class="bv">${pct(v)}</div>
+    </div>`;
+  const po = [...latest.teams].sort((a,b)=>b.prob_playoff-a.prob_playoff).slice(0,5);
+  document.getElementById('bars-po').innerHTML = po.map(t=>bar(t.team,t.prob_playoff,'po')).join('');
+  const win = [...latest.teams].sort((a,b)=>b.prob_win_normalized-a.prob_win_normalized).slice(0,5);
+  document.getElementById('bars-win').innerHTML = win.map(t=>bar(t.team,t.prob_win_normalized,'win')).join('');
+}
+
+/* 팀 색상은 엔티티 고정 (두 차트에서 같은 팀 = 같은 색) */
+let teamColor = {};
+function buildColorMap(standingsTop5, champTop5){
+  const slots = ['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--c8'];
+  [...standingsTop5, ...champTop5].forEach(team=>{
+    if(!(team in teamColor) && Object.keys(teamColor).length < slots.length)
+      teamColor[team] = css(slots[Object.keys(teamColor).length]);
+  });
+}
+
+let trendChart = null;
+function drawTrend(labels, seriesList){
+  const ink2 = css('--ink-2'), grid = css('--grid');
+  if(trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('trend'),{
+    type:'line',
+    data:{labels, datasets: seriesList.map(s=>({
+      label:s.team, data:s.data,
+      borderColor:teamColor[s.team], backgroundColor:teamColor[s.team],
+      tension:.3, pointRadius:labels.length>40?0:3, borderWidth:2,
+    }))},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:ink2,font:{size:12},usePointStyle:true,boxHeight:7}}},
+      scales:{
+        x:{ticks:{color:ink2,font:{size:11},maxTicksLimit:14},grid:{color:grid}},
+        y:{ticks:{color:ink2,font:{size:11},callback:v=>v+(state.mode==='wpct'?'':'%')},grid:{color:grid},
+           min: state.mode==='wpct'?undefined:0}
+      }
+    }
+  });
+}
+
+const state = {mode:'wpct', standings:[], history:[], latest:null};
+
+function renderTrendMode(){
+  const title = document.getElementById('trend-title');
+  const sub = document.getElementById('trend-sub');
+  document.getElementById('tab-wpct').classList.toggle('on', state.mode==='wpct');
+  document.getElementById('tab-champ').classList.toggle('on', state.mode==='champ');
+
+  if(state.mode==='wpct'){
+    title.textContent = '시즌 승률 추이';
+    sub.textContent = '현재 상위 5팀 · 시즌 개막부터 · 매일 00:00 KST 갱신';
+    if(!state.standings.length) return;
+    const top5 = state.latest.teams.slice(0,5).map(t=>t.team);
+    const labels = state.standings.map(d=>d.date.slice(5));
+    drawTrend(labels, top5.map(team=>({
+      team,
+      data: state.standings.map(d=>{
+        const row = d.teams.find(t=>t.team===team);
+        return row ? row.win_pct : null;
+      }),
+    })));
+  }else{
+    title.textContent = '일별 우승 확률 추이';
+    sub.textContent = '예측 상위 5팀 · 리그 내 정규화 · 매일 00:00 KST 갱신';
+    if(!state.history.length) return;
+    const top5 = [...state.latest.teams].sort((a,b)=>b.prob_win_normalized-a.prob_win_normalized)
+      .slice(0,5).map(t=>t.team);
+    // 일별 스냅샷은 MM-DD, 과거 주간 스냅샷은 'N주' 라벨
+    const labels = state.history.map(s=>s.date ? s.date.slice(5) : s.iso_week.split('-W')[1]+'주');
+    drawTrend(labels, top5.map(team=>({
+      team,
+      data: state.history.map(s=>{
+        const row = s.teams.find(t=>t.team===team);
+        return row ? +(row.prob_win_normalized*100).toFixed(1) : null;
+      }),
+    })));
+  }
+}
+
+document.getElementById('tab-wpct').onclick = ()=>{state.mode='wpct'; renderTrendMode();};
+document.getElementById('tab-champ').onclick = ()=>{state.mode='champ'; renderTrendMode();};
+
+async function init(){
+  try{
+    // 상대 경로 — FastAPI 서빙과 GitHub Pages 정적 호스팅 양쪽 호환
+    const latest = await (await fetch('api/latest')).json();
+    if(latest.detail){ document.querySelector('main').innerHTML =
+      `<section class="card"><h2>데이터 없음</h2><p style="font-size:14px;line-height:1.8">${latest.detail}</p></section>`; return; }
+    renderTable(latest);
+    renderBars(latest);
+    const [hist, standings] = await Promise.all([
+      (await fetch('api/history?season='+latest.season)).json(),
+      (await fetch('api/standings-history')).json(),
+    ]);
+    state.latest = latest;
+    state.history = hist.snapshots;
+    state.standings = standings.days;
+    buildColorMap(
+      latest.teams.slice(0,5).map(t=>t.team),
+      [...latest.teams].sort((a,b)=>b.prob_win_normalized-a.prob_win_normalized).slice(0,5).map(t=>t.team),
+    );
+    renderTrendMode();
+  }catch(e){
+    document.querySelector('main').innerHTML =
+      `<section class="card"><h2>연결 오류</h2><p style="font-size:14px">API 서버에 연결할 수 없습니다. 서버 실행 상태를 확인하세요.</p></section>`;
+  }
+}
+init();
+</script>
+</body>
+</html>

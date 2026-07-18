@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from app.config import SCHEDULE_DAY_OF_WEEK, SCHEDULE_HOUR; print\\('day_of_week=', SCHEDULE_DAY_OF_WEEK, 'hour=', SCHEDULE_HOUR\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import playwright; print\\('playwright ok'\\)\")",
+      "Read(//Applications/Google Chrome.app/**)",
+      "Bash(python -m uvicorn app.main:app --port 8137)",
+      "Bash(echo \"started pid $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:8137/health)",
+      "Bash(python -c \"import fastapi; print\\('fastapi at', fastapi.__file__\\)\")",
+      "Bash(python -c \"import uvicorn\")",
+      "Bash(pip show *)",
+      "Bash(python -)",
+      "Bash('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=1120,1500 --virtual-time-budget=3000 --screenshot=/private/tmp/claude-502/-Volumes-S980P-1-Mini4-Documents-Project-kbo-champ-dashboard/f998f9dc-a0ee-4f9b-ad09-ad2e72946b10/scratchpad/dash.png file:///private/tmp/claude-502/-Volumes-S980P-1-Mini4-Documents-Project-kbo-champ-dashboard/f998f9dc-a0ee-4f9b-ad09-ad2e72946b10/scratchpad/test.html)",
+      "Bash(pkill -f \"uvicorn app.main\")",
+      "Bash(pkill -f \"curl -s -o /dev/null.*8137\")",
+      "Bash(python -c \"import json; d=json.load\\(open\\('/Volumes/S980P-1/Mini4/Documents/Project/kbo-champ-dashboard/data/snapshots/latest.json'\\)\\); print\\('latest.json 원복됨 · team0 keys:', list\\(d['teams'][0].keys\\(\\)\\)\\)\")",
+      "Bash(node scripts/validate_palette.js \"#2a78d6,#008300,#e87ba4,#eda100,#1baf7a\" --mode light)",
+      "Bash(node scripts/validate_palette.js \"#3987e5,#008300,#d55181,#c98500,#199e70\" --mode dark)"
+    ]
+  }
+}
