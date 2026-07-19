@@ -1,131 +1,155 @@
-# KBO 우승 확률 전광판 (Champion Probability Dashboard)
+# KBO Championship Probability Dashboard
 
-매일 자동 갱신되는 KBO 정규시즌 우승·포스트시즌 진출 확률 대시보드.
+A daily-updated dashboard that predicts each KBO (Korea Baseball Organization)
+team's probability of winning the regular-season pennant and reaching the
+postseason.
 
-비율 지표(OPS, RISP, ERA, WHIP, FPCT, SB%, CS%)만 사용하는 로지스틱 회귀 모델로,
-시즌 중반 데이터로도 당해년도 결과를 예측할 수 있다.
-(모델 설계 근거와 검증은 `KBO_우승팀_예측모델.ipynb` 참조 — LOSO-CV 기준
-우승 Top-1 적중 63.6%, PS진출 5팀 중 평균 4.18팀 적중, AUC 0.94)
+## What the dashboard shows
 
-## 아키텍처
+- **Standings table** — all 10 teams ranked by actual win percentage, with
+  win-loss-draw record, games behind, OPS, and ERA. Each row carries a donut
+  ring showing the team's postseason probability and a column with its
+  championship probability. A cut line marks the top-5 postseason boundary.
+- **Season forecast panel** — horizontal bar charts of the top-5 teams by
+  postseason probability and by championship probability (normalized so the
+  league's championship probabilities sum to 1).
+- **Trend chart** — toggles between two views:
+  - *Win % trend*: actual daily win percentage of the current top-5 teams,
+    backfilled from opening day via the official KBO daily standings page.
+  - *Championship probability trend*: model output accumulated once per day.
+- Light and dark themes follow the OS setting automatically.
+
+## How the prediction works
+
+A pair of logistic-regression models (pennant winner / postseason berth)
+trained on 2015–2025 team seasons. Only **rate stats** are used — OPS, RISP
+average, ERA, WHIP, fielding percentage, SB%, CS% — standardized as z-scores
+within each season, so mid-season snapshots can be scored on the same scale as
+full seasons. Validated with leave-one-season-out CV: 63.6% top-1 accuracy for
+the pennant winner, 4.18 of 5 postseason teams on average, AUC 0.94 (see
+`KBO_우승팀_예측모델.ipynb` for the design rationale).
+
+## Architecture
 
 ```
-데이터 수집 (fetcher) ──▶ 예측 (predict) ──▶ 스냅샷 저장 (storage)
-        ▲                                          │
-        │ 매일 00:00 KST (APScheduler)              ▼
-        └────────── scheduler ◀──────── FastAPI (/api/*) ──▶ 대시보드 (static)
+data collection (fetcher) ──▶ prediction (predict) ──▶ snapshot store (storage)
+        ▲                                                    │
+        │ daily at 00:00 KST (APScheduler)                   ▼
+        └──────────── scheduler ◀────── FastAPI (/api/*) ──▶ dashboard (static)
 ```
 
 ```
 kbo-champ-dashboard/
 ├── app/
-│   ├── main.py            # FastAPI 앱 (API + 대시보드 서빙 + 스케줄러 lifespan)
-│   ├── config.py          # 설정 (환경변수 오버라이드)
-│   ├── scheduler.py       # 일일 갱신 잡 + APScheduler
-│   ├── storage.py         # 스냅샷 저장소 (JSON, MongoDB 확장점 문서화)
+│   ├── main.py            # FastAPI app (API + dashboard + scheduler lifespan)
+│   ├── config.py          # settings (overridable via environment variables)
+│   ├── scheduler.py       # daily update job + APScheduler
+│   ├── storage.py         # snapshot store (JSON files; MongoDB seam documented)
 │   ├── model/
-│   │   ├── train.py       # 모델 학습 (과거 시즌 → model.pkl)
-│   │   └── predict.py     # 예측 파이프라인
-│   └── data/fetcher.py    # 현재 시즌 데이터 수집 (csv | web)
-├── static/index.html      # 대시보드 (전광판 UI, Chart.js)
+│   │   ├── train.py       # model training (historical seasons → model.pkl)
+│   │   └── predict.py     # prediction pipeline
+│   └── data/fetcher.py    # current-season data collection (csv | web)
+├── static/index.html      # dashboard UI (Chart.js)
 ├── data/
-│   ├── kbo_historical.csv # 학습 데이터 (2015-2025)
-│   ├── current_season.csv # 현재 시즌 스냅샷 (일일 갱신 입력)
-│   ├── model.pkl          # 학습된 모델
-│   ├── snapshots/         # 일별 예측 결과 (날짜별 JSON)
-│   └── standings_history.csv # 날짜별 실제 순위/승률 (추이 차트용)
+│   ├── kbo_historical.csv     # training data (2015–2025)
+│   ├── current_season.csv     # current-season snapshot (daily input / scrape cache)
+│   ├── model.pkl              # trained model bundle
+│   ├── snapshots/             # daily prediction results (one JSON per date)
+│   └── standings_history.csv  # daily actual standings (win % trend chart)
 └── scripts/
-    ├── run_daily_update.py   # 수동 갱신 1회 실행
-    ├── backfill_standings.py # 시즌 개막부터 날짜별 순위 수집 (증분)
-    ├── build_static_site.py  # GitHub Pages용 정적 사이트 빌드
-    └── seed_demo_data.py     # 데모 데이터 생성 (개발용)
+    ├── run_daily_update.py    # run one manual update
+    ├── backfill_standings.py  # collect daily standings since opening day (incremental)
+    ├── build_static_site.py   # build the static site for GitHub Pages
+    └── seed_demo_data.py      # generate demo data (development only)
 ```
 
-## 빠른 시작
+## Quick start
 
 ```bash
 pip install -r requirements.txt
 
-# 1. 모델 학습 (최초 1회, 시즌 종료 후 재학습 권장)
+# 1. Train the model (once; retrain after each season)
 python -m app.model.train
 
-# 2. 데모 데이터로 바로 확인하려면 (2025 최종 기록 + 가상 일별 히스토리)
-python -m scripts.seed_demo_data
-python -m scripts.run_daily_update
+# 2. Fetch live data and produce today's prediction
+DATA_SOURCE=web python -m scripts.run_daily_update
 
-# 3. 서버 실행
+# 3. Run the server
 uvicorn app.main:app --reload
-# → http://localhost:8000  (대시보드)
+# → http://localhost:8000
 ```
 
 ## API
 
-| 메서드 | 경로 | 설명 |
+| Method | Path | Description |
 |---|---|---|
-| GET | `/` | 대시보드 |
-| GET | `/api/latest` | 최신 일별 예측 |
-| GET | `/api/history?season=2026` | 일별 스냅샷 히스토리 (추이 차트용) |
-| GET | `/api/standings-history` | 시즌 개막부터의 날짜별 순위/승률 (승률 추이용) |
-| POST | `/api/refresh` | 수동 갱신 (REFRESH_TOKEN 설정 시 `X-Refresh-Token` 헤더 필요) |
-| GET | `/health` | 헬스체크 |
+| GET | `/` | Dashboard |
+| GET | `/api/latest` | Latest daily prediction |
+| GET | `/api/history?season=2026` | Daily prediction snapshots (trend chart) |
+| GET | `/api/standings-history` | Daily actual standings since opening day (win % trend) |
+| POST | `/api/refresh` | Manual update (`X-Refresh-Token` header required when REFRESH_TOKEN is set) |
+| GET | `/health` | Health check |
 
-## 운영 워크플로우
+## Data sources
 
-**수동 모드 (DATA_SOURCE=csv, 기본값)**
-1. 매일 KBO 공식 기록실에서 팀 기록을 확인해 `data/current_season.csv` 갱신
-   (필수 컬럼: `TEAM, G, W, L, D, OPS, RISP, ERA, WHIP, FPCT, SB%, CS%`)
-2. 스케줄러가 매일 00:00 KST에 자동으로 예측·저장
-   (또는 `POST /api/refresh` 로 즉시 갱신)
+**Scraping mode (`DATA_SOURCE=web`, recommended)**
+`fetch_from_kbo_web()` merges five official KBO pages — daily standings,
+hitting, pitching, defense, and baserunning — into one snapshot (verified
+against the live page structure as of July 2026). On success the result is
+cached to `current_season.csv`; on failure (e.g. a site layout change) the
+fetcher falls back to the last successful cache automatically.
 
-**스크레이핑 모드 (DATA_SOURCE=web, 권장)**
-- `fetch_from_kbo_web()` 이 KBO 공식 순위·타자·투수·수비·주루 5개 페이지를
-  병합해 수집한다 (2026-07 실페이지 구조로 검증됨).
-- 성공 시 `current_season.csv` 에 캐시를 남기고, 실패(사이트 구조 변경 등) 시
-  마지막 성공 캐시로 자동 폴백한다. 배포 환경에서는 이 모드를 사용할 것.
+**Manual mode (`DATA_SOURCE=csv`, default)**
+Maintain `data/current_season.csv` yourself with columns
+`TEAM, G, W, L, D, OPS, RISP, ERA, WHIP, FPCT, SB%, CS%`.
+The scheduler predicts and stores results daily at 00:00 KST either way.
 
-## 배포
+## Deployment
 
-### 방법 1: GitHub Actions + Pages (권장 — 무료, 서버리스)
+### Option 1: GitHub Actions + Pages (recommended — free, serverless)
 
-상시 서버 없이 매일 자정 KST에 Actions가 갱신하고 Pages가 정적 서빙한다.
+No always-on server. A workflow updates the data and republishes the static
+site every night.
 
-1. 리포지토리를 GitHub에 푸시
-2. Settings → Pages → Source 를 **GitHub Actions** 로 변경
-3. 끝 — `.github/workflows/daily-update.yml` 이 매일 00:00 KST에
-   스크레이핑 → 예측 → `data/` 커밋(영속화) → 정적 사이트 빌드·배포를 수행한다.
-   수동 갱신은 Actions 탭에서 Run workflow.
+1. Push the repository to GitHub
+2. Settings → Pages → Source: **GitHub Actions**
+3. Done — `.github/workflows/daily-update.yml` runs daily at 00:00 KST:
+   scrape → predict → commit `data/` (persistence via git history) → build and
+   deploy the static site. Trigger manually from the Actions tab if needed.
 
-로컬에서 정적 빌드 확인:
+Preview the static build locally:
 
 ```bash
 python -m scripts.build_static_site
 python -m http.server 8000 --directory site
 ```
 
-### 방법 2: Railway (상시 서버 + API)
+### Option 2: Railway (always-on server + live API)
 
-`Procfile` 포함. Railway에 리포지토리 연결 후 환경변수 설정:
+`Procfile` included. Connect the repository and set environment variables:
 
 ```
 DATA_SOURCE=web
-REFRESH_TOKEN=<임의의 시크릿>
+REFRESH_TOKEN=<any secret>
 ```
 
-주의: Railway 기본 파일시스템은 재배포 시 초기화되므로, 스냅샷 영속화를
-위해 Volume을 `data/` 에 마운트할 것 (또는 MongoDB로 전환).
+Note: Railway's default filesystem resets on redeploy — mount a Volume at
+`data/` (or switch to MongoDB) to persist snapshots.
 
-## MongoDB(Beanie) 확장
+## MongoDB (Beanie) extension point
 
-`app/storage.py` 는 `save / load_latest / load_history` 3개 함수만 노출한다.
-MongoDB Atlas 전환 시 이 파일만 교체하면 된다 (Document 스키마 예시는
-storage.py docstring 참조). OOHLIB에서 쓰는 Beanie 패턴 그대로 적용 가능.
+`app/storage.py` exposes only `save / load_latest / load_history`. To move to
+MongoDB Atlas, replace this one file (a Document schema example is in the
+module docstring).
 
-## 유의사항
+## Notes & caveats
 
-- **'우승' = 정규시즌 1위**. 한국시리즈 결과와 다를 수 있다 (2015, 2018 사례).
-- **시즌 초반 신뢰도**: 팀 단위 비율 지표는 약 58경기(시즌 40%) 이후 안정화된다.
-  그 전에는 대시보드에 신뢰도 경고가 표시된다.
-- **데모 데이터**: `seed_demo_data.py` 가 만드는 과거 일자 스냅샷은
-  가상 데이터(`"demo": true`)다. 실운영 시작 시 `data/snapshots/` 를 비울 것.
-- **재학습**: 시즌 종료 후 `kbo_historical.csv` 에 신규 시즌을 추가하고
-  `python -m app.model.train` 을 재실행하면 모델이 갱신된다.
+- **"Championship" means finishing first in the regular season** (the
+  pennant), which can differ from the Korean Series result (e.g. 2015, 2018).
+- **Early-season reliability**: team rate stats stabilize after roughly 58
+  games (40% of the season). The dashboard shows a reliability warning before
+  that point.
+- **Demo data**: snapshots produced by `seed_demo_data.py` are synthetic
+  (marked `"demo": true`). Empty `data/snapshots/` before going live.
+- **Retraining**: after each season, append the new season to
+  `kbo_historical.csv` and rerun `python -m app.model.train`.

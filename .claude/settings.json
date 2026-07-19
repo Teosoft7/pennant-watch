@@ -17,7 +17,8 @@
       "Bash(pkill -f \"curl -s -o /dev/null.*8137\")",
       "Bash(python -c \"import json; d=json.load\\(open\\('/Volumes/S980P-1/Mini4/Documents/Project/kbo-champ-dashboard/data/snapshots/latest.json'\\)\\); print\\('latest.json 원복됨 · team0 keys:', list\\(d['teams'][0].keys\\(\\)\\)\\)\")",
       "Bash(node scripts/validate_palette.js \"#2a78d6,#008300,#e87ba4,#eda100,#1baf7a\" --mode light)",
-      "Bash(node scripts/validate_palette.js \"#3987e5,#008300,#d55181,#c98500,#199e70\" --mode dark)"
+      "Bash(node scripts/validate_palette.js \"#3987e5,#008300,#d55181,#c98500,#199e70\" --mode dark)",
+      "Bash(git -C /Volumes/S980P-1/Mini4/Documents/Project/pennant-watch remote -v)"
     ]
   }
 }
