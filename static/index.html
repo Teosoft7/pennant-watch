@@ -153,7 +153,7 @@ footer{
 <body>
 
 <header>
-  <h1>⚾ KBO 시즌 우승 예측</h1>
+  <h1>⚾ KBO Pennant Race & Postseason Odds</h1>
   <div class="meta">
     <span class="chip">SEASON <b id="m-season">----</b></span>
     <span class="chip">기준일 <b id="m-date">--</b></span>
@@ -166,23 +166,23 @@ footer{
 <main>
   <div class="top">
     <section class="card">
-      <h2>팀 순위</h2>
-      <div class="sub">실제 승률 기준 · 도넛 = 포스트시즌 진출 확률 · 상위 5팀이 포스트시즌 진출</div>
+      <h2>Team Rank</h2>
+      <div class="sub">Actual win percentage based · Donut = Postseason qualification probability · Top 5 teams qualify for postseason</div>
       <div style="overflow-x:auto">
       <table>
         <thead>
           <tr>
-            <th class="l po-h">PS확률</th>
-            <th>순위</th>
-            <th class="l">팀</th>
-            <th class="win-h">승률</th>
-            <th>게임차</th>
-            <th>승</th>
-            <th>패</th>
-            <th>무</th>
+            <th class="l po-h">PS Prob.</th>
+            <th>Rank</th>
+            <th class="l">Team</th>
+            <th class="win-h">Winning PCT</th>
+            <th>GB</th>
+            <th>Wins</th>
+            <th>Losses</th>
+            <th>Draws</th>
             <th class="hide-sm">OPS</th>
-            <th class="hide-sm">평균자책</th>
-            <th class="win-h">우승확률</th>
+            <th class="hide-sm">ERA</th>
+            <th class="win-h">Win Prob.</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -191,14 +191,14 @@ footer{
     </section>
 
     <aside class="card">
-      <h2>시즌 예측 확률</h2>
-      <div class="sub">모델 예측 상위 5팀</div>
+      <h2>Seasonal Prediction Probabilities</h2>
+      <div class="sub">Model predictions for top 5 teams</div>
       <div class="bargroup">
-        <h3 class="po-h">포스트시즌 진출 확률</h3>
+        <h3 class="po-h">Postseason Qualification Probability</h3>
         <div id="bars-po"></div>
       </div>
       <div class="bargroup">
-        <h3 class="win-h">정규시즌 우승 확률 (리그 내 정규화)</h3>
+        <h3 class="win-h">Regular Season Championship Probability</h3>
         <div id="bars-win"></div>
       </div>
     </aside>
@@ -207,12 +207,12 @@ footer{
   <section class="card">
     <div class="chart-head">
       <div>
-        <h2 id="trend-title">시즌 승률 추이</h2>
-        <div class="sub" id="trend-sub">상위 5팀 · 시즌 개막부터 · 매일 00:00 KST 갱신</div>
+        <h2 id="trend-title">Winning PCT by Date</h2>
+        <div class="sub" id="trend-sub">Top 5 Teams · Since Season Start · Updated Daily at 00:00 KST</div>
       </div>
       <div class="toggle">
-        <button id="tab-wpct" class="on">승률</button>
-        <button id="tab-champ">우승확률</button>
+        <button id="tab-wpct" class="on">Winning PCT</button>
+        <button id="tab-champ">Championship Prob.</button>
       </div>
     </div>
     <canvas id="trend"></canvas>
@@ -220,8 +220,8 @@ footer{
 </main>
 
 <footer>
-  모델: 로지스틱 회귀 · 피처: OPS / RISP / ERA / WHIP / FPCT / SB% / CS% (시즌 내 Z-score)<br>
-  순위는 실제 승률(무승부 제외) 기준 · '우승'은 정규시즌 1위(페넌트레이스)를 의미하며 한국시리즈 결과와 다를 수 있습니다 · 매일 00:00 KST 자동 갱신
+  Model: Logistic Regression · Features: OPS / RISP / ERA / WHIP / FPCT / SB% / CS% (Within Season Z-score)<br>
+  Rankings are based on actual win percentage (excluding ties) · 'Championship' refers to the regular season 1st place (Pennant Race) and may differ from the Korean Series results · Automatically updated daily at 00:00 KST
 </footer>
 
 <script>
@@ -317,8 +317,8 @@ function renderTrendMode(){
   document.getElementById('tab-champ').classList.toggle('on', state.mode==='champ');
 
   if(state.mode==='wpct'){
-    title.textContent = '시즌 승률 추이';
-    sub.textContent = '현재 상위 5팀 · 시즌 개막부터 · 매일 00:00 KST 갱신';
+    title.textContent = 'Winning PCT by Date';
+    sub.textContent = 'Current Top 5 Teams · Since Season Start · Updated Daily at 00:00 KST';
     if(!state.standings.length) return;
     const top5 = state.latest.teams.slice(0,5).map(t=>t.team);
     const labels = state.standings.map(d=>d.date.slice(5));
@@ -330,8 +330,8 @@ function renderTrendMode(){
       }),
     })));
   }else{
-    title.textContent = '일별 우승 확률 추이';
-    sub.textContent = '예측 상위 5팀 · 리그 내 정규화 · 매일 00:00 KST 갱신';
+    title.textContent = 'Winning Probability by Date';
+    sub.textContent = 'Model predictions for top 5 teams ·Updated Daily at 00:00 KST';
     if(!state.history.length) return;
     const top5 = [...state.latest.teams].sort((a,b)=>b.prob_win_normalized-a.prob_win_normalized)
       .slice(0,5).map(t=>t.team);
