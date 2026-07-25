@@ -157,7 +157,7 @@ footer{
   <div class="meta">
     <span class="chip">SEASON <b id="m-season">----</b></span>
     <span class="chip">Date <b id="m-date">--</b></span>
-    <span class="chip">Average <b id="m-games">--</b> Games Played (<b id="m-progress">--%</b>)</span>
+    <span class="chip">Average <b id="m-games">--</b> Games Played (<b id="m-progress">--%</b> of the season)</span>
     <span class="chip">Updated <b id="m-updated">--</b></span>
   </div>
 </header>
@@ -175,11 +175,11 @@ footer{
             <th class="l po-h">PS Prob.</th>
             <th>Rank</th>
             <th class="l">Team</th>
-            <th class="win-h">Winning PCT</th>
+            <th class="win-h">PCT</th>
             <th>GB</th>
-            <th>Wins</th>
-            <th>Losses</th>
-            <th>Draws</th>
+            <th>W</th>
+            <th>L</th>
+            <th>D</th>
             <th class="hide-sm">OPS</th>
             <th class="hide-sm">ERA</th>
             <th class="win-h">Win Prob.</th>
@@ -257,7 +257,7 @@ function renderTable(latest){
         <td class="dim hide-sm">${t.stats.ERA.toFixed(2)}</td>
         <td class="champ">${pct(t.prob_win_normalized)}</td>
       </tr>
-      ${t.rank===PO_SPOTS?`<tr class="cut"><td colspan="11"><div>─ 포스트시즌 컷 ─</div></td></tr>`:''}`;
+      ${t.rank===PO_SPOTS?`<tr class="cut"><td colspan="11"><div>─ cutline ─</div></td></tr>`:''}`;
   }).join('');
   document.getElementById('tbody').innerHTML = rows;
 }
